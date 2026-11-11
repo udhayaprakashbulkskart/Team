@@ -6,6 +6,7 @@ import { makeT } from '@/lib/i18n';
 import { Avatar, card, KycBadge } from '@/components/team/ui';
 import { ChangePassword } from '@/components/team/change-password';
 import { SignOutButton } from '@/components/team/nav';
+import { NotificationSettings } from '@/components/team/notifications';
 
 export const metadata: Metadata = { title: 'My profile' };
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,7 @@ export default async function MyProfilePage() {
           <KycBadge status={me.kycStatus} label={t(`kyc.${me.kycStatus}`)} />
         </div>
       </section>
+      <NotificationSettings />
       <ChangePassword />
       <div className="sm:hidden">
         <SignOutButton className="w-full rounded-xl border border-tp-line bg-white px-4 py-3 text-sm font-semibold text-tp-ink transition hover:border-tp-purple/40 hover:text-tp-purple disabled:opacity-60" />

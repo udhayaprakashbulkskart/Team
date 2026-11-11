@@ -2,6 +2,7 @@ import { requireTeamPage } from '@/lib/team/session';
 import { getLang } from '@/lib/i18n/server';
 import { LangProvider } from '@/components/team/i18n';
 import { PortalBottomNav, PortalMobileHeader, PortalSidebar } from '@/components/team/nav';
+import { NotificationWatcher } from '@/components/team/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ export default async function PortalLayout({ children }: { children: React.React
           <main className="flex-1 px-4 pb-28 pt-5 md:px-8 md:pt-8 lg:pb-10">{children}</main>
         </div>
         <PortalBottomNav isAdmin={actor.isAdmin} />
+        <NotificationWatcher />
       </div>
     </LangProvider>
   );

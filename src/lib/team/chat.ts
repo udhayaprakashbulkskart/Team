@@ -312,3 +312,53 @@ export async function isGroupMember(memberId: string): Promise<boolean> {
   return !!m;
 }
 
+
+/**
+ * Unread summary for notifications: every private conversation and the group with unread messages
+ * from other people, with the sender's name and a short preview of the newest one.
+ */
+export async function getUnreadSummary(actor: Actor) {
+  const convos = await listConversations(actor);
+  const privateItems = convos
+    .filter((c) => c.unread > 0 && c.other)
+    .map((c) => ({
+      key: `p:${c.id}`,
+      conversationId: c.id,
+      href: `/team/chat/${c.id}`,
+      fromName: c.other!.fullName,
+      preview: c.preview,
+      unread: c.unread,
+      at: c.lastMessageAt,
+    }));
+
+  const membership = await db.groupMembership.findUnique({
+    where: { groupId_memberId: { groupId: TEAM_GROUP_ID, memberId: actor.id } },
+    select: { lastReadAt: true },
+  });
+  let group: null | { key: string; href: string; unread: number; latest: { fromName: string; preview: string | null; at: string } } = null;
+  if (membership) {
+    const unread = await db.groupMessage.count({
+      where: { groupId: TEAM_GROUP_ID, senderId: { not: actor.id }, ...(membership.lastReadAt ? { createdAt: { gt: membership.lastReadAt } } : {}) },
+    });
+    if (unread > 0) {
+      const latest = await db.groupMessage.findFirst({
+        where: { groupId: TEAM_GROUP_ID, senderId: { not: actor.id } },
+        orderBy: { createdAt: 'desc' },
+        select: { body: true, fileId: true, createdAt: true, sender: { select: { fullName: true } } },
+      });
+      group = {
+        key: 'g',
+        href: '/team/group',
+        unread,
+        latest: {
+          fromName: latest?.sender.fullName ?? '',
+          preview: latest ? (latest.body ?? (latest.fileId ? '📎' : null)) : null,
+          at: (latest?.createdAt ?? new Date()).toISOString(),
+        },
+      };
+    }
+  }
+
+  const total = privateItems.reduce((n, c) => n + c.unread, 0) + (group?.unread ?? 0);
+  return { total, private: privateItems, group };
+}
