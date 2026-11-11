@@ -4,13 +4,16 @@ import { requireAdminPage } from '@/lib/team/session';
 import { getMemberProfile, listKycDocuments } from '@/lib/team/members';
 import { isGroupMember } from '@/lib/team/chat';
 import { ApiError } from '@/lib/http';
+import { getLang } from '@/lib/i18n/server';
+import { makeT } from '@/lib/i18n';
 import { AdminMemberEditor } from '@/components/team/admin-member-editor';
 
-export const metadata: Metadata = { title: { absolute: 'Manage member · Team Portal' }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: 'Manage member' };
 export const dynamic = 'force-dynamic';
 
 export default async function AdminMemberPage({ params }: { params: { id: string } }) {
   const actor = await requireAdminPage();
+  const t = makeT(getLang());
   let profile;
   try {
     profile = await getMemberProfile(actor, params.id);
@@ -24,7 +27,7 @@ export default async function AdminMemberPage({ params }: { params: { id: string
     <div className="mx-auto max-w-6xl">
       <header className="mb-6">
         <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{m.fullName}</h1>
-        <p className="mt-1 text-sm text-tp-muted">Manage profile, photo, KYC documents, access and group membership.</p>
+        <p className="mt-1 text-sm text-tp-muted">{t('edpage.description')}</p>
       </header>
       <AdminMemberEditor
         member={{

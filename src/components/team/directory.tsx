@@ -3,13 +3,16 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import type { KycStatus } from '@prisma/client';
 import { teamApi } from '@/lib/team/client';
-import { Avatar, btnGhost, btnPrimary, KycBadge, Notice, card } from './ui';
 import type { MemberCard } from '@/lib/team/members';
+import { Avatar, btnGhost, btnPrimary, KycBadge, Notice, card } from './ui';
+import { useT } from './i18n';
 
 type Filter = 'ALL' | 'VERIFIED' | 'PENDING';
 
 export function Directory({ members, meId }: { members: MemberCard[]; meId: string }) {
+  const { t } = useT();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('ALL');
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -34,16 +37,17 @@ export function Directory({ members, meId }: { members: MemberCard[]; meId: stri
       const convo = await teamApi<{ id: string }>('/api/team/conversations', { body: { memberId } });
       router.push(`/team/chat/${convo.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not open the chat.');
+      setError(err instanceof Error && err.message ? err.message : t('dir.openChatError'));
       setOpeningFor(null);
     }
   }
 
   const pills: { key: Filter; label: string }[] = [
-    { key: 'ALL', label: 'All members' },
-    { key: 'VERIFIED', label: 'Verified' },
-    { key: 'PENDING', label: 'Pending KYC' },
+    { key: 'ALL', label: t('dir.all') },
+    { key: 'VERIFIED', label: t('dir.verified') },
+    { key: 'PENDING', label: t('dir.pending') },
   ];
+  const kycLabel = (s: KycStatus) => t(`kyc.${s}`);
 
   return (
     <div className="space-y-5">
@@ -57,29 +61,29 @@ export function Directory({ members, meId }: { members: MemberCard[]; meId: stri
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, phone or role"
-            aria-label="Search team members"
+            placeholder={t('dir.searchPlaceholder')}
+            aria-label={t('dir.searchLabel')}
             className="w-full rounded-xl border border-tp-line bg-white py-2.5 pl-10 pr-3.5 text-sm outline-none transition placeholder:text-tp-muted focus:border-tp-purple focus:ring-4 focus:ring-tp-purple/15"
           />
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-xl border border-tp-line bg-white p-1" role="group" aria-label="View">
+          <div className="flex rounded-xl border border-tp-line bg-white p-1" role="group" aria-label={t('dir.viewLabel')}>
             {(['grid', 'list'] as const).map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setView(v)}
                 aria-pressed={view === v}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${view === v ? 'bg-tp-purple text-white' : 'text-tp-muted hover:text-tp-ink'}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${view === v ? 'bg-tp-purple text-white' : 'text-tp-muted hover:text-tp-ink'}`}
               >
-                {v}
+                {v === 'grid' ? t('dir.grid') : t('dir.list')}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by KYC status">
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t('dir.filterLabel')}>
         {pills.map((p) => (
           <button
             key={p.key}
@@ -93,17 +97,15 @@ export function Directory({ members, meId }: { members: MemberCard[]; meId: stri
             {p.label}
           </button>
         ))}
-        <span className="ml-auto self-center text-xs text-tp-muted">
-          {visible.length} of {members.length} members
-        </span>
+        <span className="ml-auto self-center text-xs text-tp-muted">{t('dir.count', { shown: visible.length, total: members.length })}</span>
       </div>
 
       {error && <Notice>{error}</Notice>}
 
       {visible.length === 0 && (
         <div className={`${card} p-10 text-center`}>
-          <p className="font-semibold">No members match these filters.</p>
-          <p className="mt-1 text-sm text-tp-muted">Try a different search or clear the filter.</p>
+          <p className="font-semibold">{t('dir.noMatch')}</p>
+          <p className="mt-1 text-sm text-tp-muted">{t('dir.noMatchHint')}</p>
         </div>
       )}
 
@@ -114,27 +116,30 @@ export function Directory({ members, meId }: { members: MemberCard[]; meId: stri
               <div className="flex items-start gap-4">
                 <Avatar name={m.fullName} initials={m.initials} photoUrl={m.photoUrl} size="lg" seed={m.id} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-bold">{m.fullName}{m.id === meId && <span className="ml-2 text-xs font-medium text-tp-muted">(you)</span>}</p>
-                  <p className="truncate text-sm text-tp-muted">{m.jobTitle ?? 'Team member'}</p>
-                  <a href={`tel:${m.phone}`} className="mt-1 block truncate text-sm font-medium text-tp-purple hover:underline">
+                  <p className="truncate text-base font-bold">
+                    {m.fullName}
+                    {m.id === meId && <span className="ms-2 text-xs font-medium text-tp-muted">{t('dir.you')}</span>}
+                  </p>
+                  <p className="truncate text-sm text-tp-muted">{m.jobTitle ?? t('role.default')}</p>
+                  <a href={`tel:${m.phone}`} className="mt-1 block truncate text-sm font-medium text-tp-purple hover:underline" dir="ltr">
                     {m.phone}
                   </a>
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between gap-2">
-                <KycBadge status={m.kycStatus} />
-                {!m.active && <span className="text-xs font-semibold text-rose-600">Deactivated</span>}
+                <KycBadge status={m.kycStatus} label={kycLabel(m.kycStatus)} />
+                {!m.active && <span className="text-xs font-semibold text-rose-600">{t('dir.deactivated')}</span>}
               </div>
               <div className="mt-5 grid grid-cols-2 gap-2">
                 {m.id !== meId ? (
                   <button type="button" onClick={() => startChat(m.id)} disabled={openingFor === m.id} className={btnPrimary}>
-                    {openingFor === m.id ? 'Opening…' : 'Chat'}
+                    {openingFor === m.id ? t('common.opening') : t('dir.chat')}
                   </button>
                 ) : (
                   <span />
                 )}
                 <Link href={`/team/members/${m.id}`} className={`${btnGhost} ${m.id === meId ? 'col-span-2' : ''}`}>
-                  View Profile
+                  {t('dir.viewProfile')}
                 </Link>
               </div>
             </li>
@@ -146,18 +151,23 @@ export function Directory({ members, meId }: { members: MemberCard[]; meId: stri
             <li key={m.id} className="flex flex-wrap items-center gap-4 px-4 py-3.5 md:flex-nowrap">
               <Avatar name={m.fullName} initials={m.initials} photoUrl={m.photoUrl} size="md" seed={m.id} />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{m.fullName}{m.id === meId && <span className="ml-2 text-xs font-medium text-tp-muted">(you)</span>}</p>
-                <p className="truncate text-sm text-tp-muted">{m.jobTitle ?? 'Team member'} · {m.phone}</p>
+                <p className="truncate font-semibold">
+                  {m.fullName}
+                  {m.id === meId && <span className="ms-2 text-xs font-medium text-tp-muted">{t('dir.you')}</span>}
+                </p>
+                <p className="truncate text-sm text-tp-muted">
+                  {m.jobTitle ?? t('role.default')} · <span dir="ltr">{m.phone}</span>
+                </p>
               </div>
-              <KycBadge status={m.kycStatus} />
+              <KycBadge status={m.kycStatus} label={kycLabel(m.kycStatus)} />
               <div className="flex gap-2">
                 {m.id !== meId && (
                   <button type="button" onClick={() => startChat(m.id)} disabled={openingFor === m.id} className={`${btnPrimary} !px-3 !py-2`}>
-                    Chat
+                    {t('dir.chat')}
                   </button>
                 )}
                 <Link href={`/team/members/${m.id}`} className={`${btnGhost} !px-3 !py-2`}>
-                  View Profile
+                  {t('dir.viewProfile')}
                 </Link>
               </div>
             </li>

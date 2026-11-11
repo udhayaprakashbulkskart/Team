@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { getLang } from '@/lib/i18n/server';
 import './globals.css';
 
 // Every page reads live data or the session, so nothing is pre-rendered at build time.
@@ -19,8 +20,9 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = getLang();
   return (
-    <html lang="en-IN">
+    <html lang={lang === 'zh' ? 'zh-CN' : 'en-IN'}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

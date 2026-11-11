@@ -3,14 +3,18 @@ import Link from 'next/link';
 import { requireTeamPage } from '@/lib/team/session';
 import { listConversations } from '@/lib/team/chat';
 import { listMembers } from '@/lib/team/members';
+import { getLang } from '@/lib/i18n/server';
+import { makeT, formatDate } from '@/lib/i18n';
 import { Avatar, btnPrimary, card } from '@/components/team/ui';
 import { StartChatButton } from '@/components/team/start-chat-button';
 
-export const metadata: Metadata = { title: { absolute: 'Chat · Team Portal' }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: 'Chat' };
 export const dynamic = 'force-dynamic';
 
 export default async function ChatInboxPage() {
   const actor = await requireTeamPage();
+  const lang = getLang();
+  const t = makeT(lang);
   const [conversations, members] = await Promise.all([listConversations(actor), listMembers(actor)]);
   const withConversation = new Set(conversations.map((c) => c.other?.id).filter(Boolean));
   const others = members.filter((m) => m.id !== actor.id && !withConversation.has(m.id));
@@ -18,15 +22,13 @@ export default async function ChatInboxPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <header>
-        <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">Private chat</h1>
-        <p className="mt-1 text-sm text-tp-muted">One-to-one conversations. Only you and the other person can see them.</p>
+        <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{t('chat.title')}</h1>
+        <p className="mt-1 text-sm text-tp-muted">{t('chat.subtitle')}</p>
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-tp-muted">Conversations</h2>
-        {conversations.length === 0 && (
-          <p className={`${card} p-6 text-center text-sm text-tp-muted`}>No conversations yet. Start one below or from the directory.</p>
-        )}
+        <h2 className="text-xs font-bold uppercase tracking-wider text-tp-muted">{t('chat.conversations')}</h2>
+        {conversations.length === 0 && <p className={`${card} p-6 text-center text-sm text-tp-muted`}>{t('chat.none')}</p>}
         <ul className={`${card} divide-y divide-tp-line overflow-hidden`}>
           {conversations.map((c) => (
             <li key={c.id}>
@@ -38,15 +40,17 @@ export default async function ChatInboxPage() {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 truncate font-semibold">
-                    {c.other?.fullName ?? 'Former member'}
-                    {c.other && !c.other.active && <span className="text-xs font-medium text-rose-600">Deactivated</span>}
+                    {c.other?.fullName ?? t('chat.formerMember')}
+                    {c.other && !c.other.active && <span className="text-xs font-medium text-rose-600">{t('dir.deactivated')}</span>}
                   </p>
-                  <p className={`truncate text-sm ${c.unread > 0 ? 'font-semibold text-tp-ink' : 'text-tp-muted'}`}>{c.preview ?? 'No messages yet'}</p>
+                  <p className={`truncate text-sm ${c.unread > 0 ? 'font-semibold text-tp-ink' : 'text-tp-muted'}`}>
+                    {c.preview === null ? t('chat.noMessages') : c.preview === '📎 Attachment' ? t('chat.attachment') : c.preview}
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <span className="text-[11px] text-tp-muted">{new Date(c.lastMessageAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                  <span className="text-[11px] text-tp-muted">{formatDate(c.lastMessageAt, lang, { day: 'numeric', month: 'short' })}</span>
                   {c.unread > 0 && (
-                    <span className="min-w-[1.4rem] rounded-full bg-tp-purple px-1.5 py-0.5 text-center text-[11px] font-bold text-white" aria-label={`${c.unread} unread`}>
+                    <span className="min-w-[1.4rem] rounded-full bg-tp-purple px-1.5 py-0.5 text-center text-[11px] font-bold text-white" aria-label={t('chat.unread', { count: c.unread })}>
                       {c.unread > 99 ? '99+' : c.unread}
                     </span>
                   )}
@@ -59,7 +63,7 @@ export default async function ChatInboxPage() {
 
       {others.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-tp-muted">Start a new chat</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-tp-muted">{t('chat.startNew')}</h2>
           <ul className={`${card} divide-y divide-tp-line overflow-hidden`}>
             {others.map((m) => (
               <li key={m.id} className="flex items-center gap-4 px-4 py-3">

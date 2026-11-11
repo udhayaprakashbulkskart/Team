@@ -4,10 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { teamApi } from '@/lib/team/client';
 import { btnPrimary, card, inputBase, Notice } from './ui';
+import { useT } from './i18n';
 
 const EMPTY = { fullName: '', phone: '', password: '', jobTitle: '', role: 'MEMBER' as 'MEMBER' | 'ADMIN' };
 
 export function AdminAddMember() {
+  const { t } = useT();
   const router = useRouter();
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
@@ -21,11 +23,11 @@ export function AdminAddMember() {
     setDone(null);
     try {
       await teamApi('/api/team/members', { body: form });
-      setDone(`${form.fullName} has been added. Share the phone number and temporary password with them securely.`);
+      setDone(t('add.done', { name: form.fullName }));
       setForm(EMPTY);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not add the member.');
+      setError(err instanceof Error && err.message ? err.message : t('add.error'));
     } finally {
       setBusy(false);
     }
@@ -34,33 +36,33 @@ export function AdminAddMember() {
   return (
     <form onSubmit={submit} className={`${card} space-y-5 p-6`}>
       <div>
-        <h2 className="text-lg font-bold">Add a team member</h2>
-        <p className="text-sm text-tp-muted">They sign in with their full name, phone number and password. They join the Team Group automatically.</p>
+        <h2 className="text-lg font-bold">{t('add.title')}</h2>
+        <p className="text-sm text-tp-muted">{t('add.note')}</p>
       </div>
       {error && <Notice>{error}</Notice>}
       {done && <Notice tone="success">{done}</Notice>}
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Full name">
+        <Field label={t('add.fullName')}>
           <input className={inputBase} required minLength={2} value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
         </Field>
-        <Field label="Phone number">
+        <Field label={t('add.phone')}>
           <input className={inputBase} required inputMode="tel" placeholder="+91 98765 43210" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
         </Field>
-        <Field label="Job title">
+        <Field label={t('add.jobTitle')}>
           <input className={inputBase} value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} />
         </Field>
-        <Field label="Temporary password">
+        <Field label={t('add.password')}>
           <input className={inputBase} type="password" required minLength={10} autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         </Field>
-        <Field label="Role">
+        <Field label={t('add.role')}>
           <select className={inputBase} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as 'MEMBER' | 'ADMIN' })}>
-            <option value="MEMBER">Team member</option>
-            <option value="ADMIN">Administrator</option>
+            <option value="MEMBER">{t('role.MEMBER')}</option>
+            <option value="ADMIN">{t('role.ADMIN')}</option>
           </select>
         </Field>
       </div>
       <button type="submit" disabled={busy} className={btnPrimary}>
-        {busy ? 'Adding…' : 'Add member'}
+        {busy ? t('add.adding') : t('add.submit')}
       </button>
     </form>
   );

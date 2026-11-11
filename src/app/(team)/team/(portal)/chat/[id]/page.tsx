@@ -4,14 +4,17 @@ import { notFound } from 'next/navigation';
 import { requireTeamPage } from '@/lib/team/session';
 import { getPrivateConversation } from '@/lib/team/chat';
 import { ApiError } from '@/lib/http';
+import { getLang } from '@/lib/i18n/server';
+import { makeT } from '@/lib/i18n';
 import { card } from '@/components/team/ui';
 import { PrivateChat } from '@/components/team/private-chat';
 
-export const metadata: Metadata = { title: { absolute: 'Private chat · Team Portal' }, robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: 'Private chat' };
 export const dynamic = 'force-dynamic';
 
 export default async function PrivateChatPage({ params }: { params: { id: string } }) {
   const actor = await requireTeamPage();
+  const t = makeT(getLang());
   let convo;
   try {
     convo = await getPrivateConversation(actor, params.id);
@@ -22,7 +25,7 @@ export default async function PrivateChatPage({ params }: { params: { id: string
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-3">
       <Link href="/team/chat" className="text-sm font-semibold text-tp-muted hover:text-tp-purple">
-        ← All conversations
+        {t('chat.allConversations')}
       </Link>
       <div className={`${card} flex h-[calc(100dvh-13rem)] min-h-[420px] flex-col overflow-hidden lg:h-[calc(100dvh-8rem)]`}>
         <PrivateChat conversationId={convo.id} other={convo.other} meId={actor.id} />

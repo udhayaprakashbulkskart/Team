@@ -8,18 +8,19 @@ export const inputBase =
   'w-full rounded-xl border border-tp-line bg-white px-3.5 py-2.5 text-sm text-tp-ink outline-none transition placeholder:text-tp-muted focus:border-tp-purple focus:ring-4 focus:ring-tp-purple/15';
 export const card = 'rounded-2xl border border-tp-line bg-white shadow-[0_12px_32px_-18px_rgba(40,30,110,0.25)]';
 
-const KYC_STYLES: Record<KycStatus, { label: string; cls: string; dot: string }> = {
-  VERIFIED: { label: 'Verified', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500' },
-  PENDING: { label: 'Pending KYC', cls: 'bg-amber-50 text-amber-700 ring-amber-200', dot: 'bg-amber-500' },
-  REJECTED: { label: 'KYC rejected', cls: 'bg-rose-50 text-rose-700 ring-rose-200', dot: 'bg-rose-500' },
+const KYC_STYLES: Record<KycStatus, { cls: string; dot: string }> = {
+  VERIFIED: { cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500' },
+  PENDING: { cls: 'bg-amber-50 text-amber-700 ring-amber-200', dot: 'bg-amber-500' },
+  REJECTED: { cls: 'bg-rose-50 text-rose-700 ring-rose-200', dot: 'bg-rose-500' },
 };
 
-export function KycBadge({ status }: { status: KycStatus }) {
+/** Pass the translated label in; this file is shared by server and client pages. */
+export function KycBadge({ status, label }: { status: KycStatus; label: string }) {
   const s = KYC_STYLES[status];
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${s.cls}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} aria-hidden />
-      {s.label}
+      {label}
     </span>
   );
 }
@@ -61,10 +62,7 @@ export function Avatar({
     return <img src={photoUrl} alt={name} className={`${base} object-cover ring-2 ring-white`} loading="lazy" />;
   }
   return (
-    <div
-      aria-label={name}
-      className={`${base} flex items-center justify-center font-bold ring-2 ring-white ${toneFor(seed ?? name)}`}
-    >
+    <div aria-label={name} className={`${base} flex items-center justify-center font-bold ring-2 ring-white ${toneFor(seed ?? name)}`}>
       {initials}
     </div>
   );
@@ -74,20 +72,6 @@ export function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-export function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-}
-
-export function formatDay(iso: string) {
-  const d = new Date(iso);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return 'Today';
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function Notice({ tone = 'error', children }: { tone?: 'error' | 'info' | 'success'; children: React.ReactNode }) {

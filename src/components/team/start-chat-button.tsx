@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { teamApi } from '@/lib/team/client';
 import { btnPrimary, Notice } from './ui';
+import { useT } from './i18n';
 
 /** Opens (or creates) the private conversation with a member, then opens the chat screen. */
-export function StartChatButton({ memberId, className = btnPrimary, label = 'Chat' }: { memberId: string; className?: string; label?: string }) {
+export function StartChatButton({ memberId, className = btnPrimary, label }: { memberId: string; className?: string; label?: string }) {
+  const { t } = useT();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,7 @@ export function StartChatButton({ memberId, className = btnPrimary, label = 'Cha
       const convo = await teamApi<{ id: string }>('/api/team/conversations', { body: { memberId } });
       router.push(`/team/chat/${convo.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not open the chat.');
+      setError(err instanceof Error && err.message ? err.message : t('dir.openChatError'));
       setBusy(false);
     }
   }
@@ -26,7 +28,7 @@ export function StartChatButton({ memberId, className = btnPrimary, label = 'Cha
   return (
     <div>
       <button type="button" onClick={open} disabled={busy} className={className}>
-        {busy ? 'Opening…' : label}
+        {busy ? t('common.opening') : (label ?? t('dir.chat'))}
       </button>
       {error && (
         <div className="mt-2">

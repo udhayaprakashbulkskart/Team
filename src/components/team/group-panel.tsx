@@ -3,27 +3,21 @@
 import Link from 'next/link';
 import { ChatView } from './chat-view';
 import { Avatar } from './ui';
+import { useT } from './i18n';
 
 export type GroupPerson = { id: string; fullName: string; initials: string; photoUrl: string | null; jobTitle: string | null };
 
 /** Team Group chat with its member list. Used full-width on the group page and as the desktop side panel. */
-export function GroupChat({
-  meId,
-  memberCount,
-  members,
-  compact = false,
-}: {
-  meId: string;
-  memberCount: number;
-  members: GroupPerson[];
-  compact?: boolean;
-}) {
+export function GroupChat({ meId, memberCount, members, compact = false }: { meId: string; memberCount: number; members: GroupPerson[]; compact?: boolean }) {
+  const { t } = useT();
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between gap-3 border-b border-tp-line px-4 py-3.5">
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold">Team Group</p>
-          <p className="text-xs text-tp-muted">{memberCount} members · Real-time</p>
+          <p className="truncate text-sm font-bold">{t('group.defaultName')}</p>
+          <p className="text-xs text-tp-muted">
+            {t('cv.members', { count: memberCount })} · {t('cv.realtime')}
+          </p>
         </div>
         <div className="flex -space-x-2">
           {members.slice(0, 4).map((m) => (
@@ -32,18 +26,11 @@ export function GroupChat({
         </div>
       </div>
       <div className="min-h-0 flex-1">
-        <ChatView
-          messagesUrl="/api/team/group/messages"
-          readUrl="/api/team/group/read"
-          meId={meId}
-          showSenderNames
-          compact={compact}
-          emptyText="The whole team is here. Start the conversation."
-        />
+        <ChatView messagesUrl="/api/team/group/messages" readUrl="/api/team/group/read" meId={meId} showSenderNames compact={compact} emptyText={t('cv.groupEmpty')} />
       </div>
       {!compact && (
         <details className="border-t border-tp-line px-4 py-3 text-sm lg:hidden">
-          <summary className="cursor-pointer font-semibold text-tp-purple">Members ({memberCount})</summary>
+          <summary className="cursor-pointer font-semibold text-tp-purple">{t('group.membersToggle', { count: memberCount })}</summary>
           <ul className="mt-2 space-y-2">
             {members.map((m) => (
               <li key={m.id}>
